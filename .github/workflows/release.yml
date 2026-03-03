@@ -91,10 +91,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: packages
-          clean: false
+      - name: Checkout packages branch
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git fetch origin packages || git checkout --orphan packages
+          git reset --hard origin/packages || true
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -112,8 +114,6 @@ jobs:
 
       - name: Commit and push
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
           git add -A
-          git commit -m "Release: update packages" || echo "No changes"
-          git push origin packages || git push -u origin packages
+          git commit -m "Release: update packages" || echo "No changes to commit"
+          git push origin packages --force
