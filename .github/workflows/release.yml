@@ -86,3 +86,34 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  save-packages:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: packages
+          clean: false
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare packages
+        run: |
+          rm -rf packages
+          mkdir -p packages
+          for dir in artifacts/*/; do
+            cp "$dir"/* packages/ 2>/dev/null || true
+          done
+          ls -la packages/
+
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Release: update packages" || echo "No changes"
+          git push origin packages || git push -u origin packages
