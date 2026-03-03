@@ -80,12 +80,24 @@ jobs:
           done
 
       - name: Create Release
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README with version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          sed -i "s|releases/download/v[^/]*|releases/download/$TAG_NAME|g" README.md
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add README.md
+          git commit -m "docs: update download links to $TAG_NAME"
+          git push
 
   save-packages:
     needs: build
