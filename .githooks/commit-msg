@@ -1,0 +1,15 @@
+#!/bin/sh
+# Strip AI co-author lines added by Cursor, Copilot, and similar tools.
+# To install: git config core.hooksPath .githooks
+
+COMMIT_MSG_FILE="$1"
+
+sed -i'' \
+  -e '/^Co-authored-by:.*[Cc]ursor/d' \
+  -e '/^Co-authored-by:.*cursor\.sh/d' \
+  -e '/^Co-authored-by:.*[Cc]opilot/d' \
+  -e '/^Co-authored-by:.*github\.com\/apps\//d' \
+  "$COMMIT_MSG_FILE"
+
+# Remove trailing blank lines left after stripping.
+sed -i'' -e '/^[[:space:]]*$/{/./!{$d;N;/^\n$/d;}}' "$COMMIT_MSG_FILE"

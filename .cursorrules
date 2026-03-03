@@ -1,0 +1,157 @@
+# Tasklean — Code Quality Rules
+
+## ⚠️ CRITICAL REQUIREMENT
+
+**DO NOT CREATE FILES WITHOUT EXPLICIT USER REQUEST**
+
+- ❌ **FORBIDDEN** to create files without explicit user instruction
+- ✅ **ALLOWED** to create files only when user explicitly asks
+- ✅ **ALLOWED** to edit existing files upon user request
+- ✅ **ALLOWED** to suggest file creation, but not create without confirmation
+
+**This requirement has highest priority and must always be followed.**
+
+## 🔴 ABSOLUTE PRIORITY: Structure and Readability
+
+**Correct file structure and code readability — absolute priority.**
+
+This means:
+1. **Structure** — files in correct directories, names reflect content
+2. **Readability** — code understandable without comments, variable/function/type names speak for themselves
+3. **Simplicity** — prefer simple solution over complex. If simpler is possible — do simpler
+4. **One file = one responsibility** — file does one thing and does it well
+5. **Navigation** — developer must find needed code by directory structure, without search
+
+**When conflict between "fast works" vs "correctly structured" — always choose structure.**
+
+## General Principles
+
+1. **Follow Go best practices**
+2. **Apply linting rules from project config**
+3. **Limit file size to 500 lines**
+4. **Split code into modules when exceeding 300 lines**
+5. **No hardcoded values — use config**
+6. **Use context for all operations**
+7. **Proper error handling with wrapping**
+
+## Project Structure
+
+```
+tasklean/
+├── cmd/                     # Entry points
+│   └── tasklean/            # Main CLI
+├── internal/                # Private application code
+│   ├── api/                 # API handlers
+│   ├── config/              # Configuration
+│   ├── models/              # Data models
+│   ├── services/            # Business logic
+│   └── sync/                # Synchronization logic
+├── pkg/                     # Public libraries
+│   └── tracker/             # Tracker adapters
+├── configs/                 # Configuration files
+└── docs/                    # Documentation
+```
+
+## File Naming
+
+- **NO CAPS** in file names (except README.md, Dockerfile, Makefile)
+- Go files: **snake_case** (`user_service.go`, `user_service_test.go`)
+- Config files: kebab-case or snake_case
+- Avoid generic names like `util.go`, `helper.go` — use descriptive names
+
+## Linting
+
+**ALWAYS run after creating or modifying files:**
+
+```bash
+gofmt -w <file>
+goimports -w <file>
+golangci-lint run ./<path>
+gofmt -l .  # Should be empty
+```
+
+## Configuration
+
+- **Static** — constants in code for unchangeable values
+- **Dynamic** — config file or environment variables for user settings
+- **NO hardcoding** — all configurable values from config or constants
+
+## Git Commits
+
+- **REQUIRED** in English
+- Format: `type: description` (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`)
+- One commit = one logical unit
+
+## Best Practices Go
+
+### Error Handling
+
+```go
+// ❌ Bad
+result, _ := someFunction()
+
+// ✅ Good
+result, err := someFunction()
+if err != nil {
+    return fmt.Errorf("failed to execute: %w", err)
+}
+```
+
+### Context
+
+```go
+func (s *Service) DoSomething(ctx context.Context, param string) error {
+    ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+    // ...
+}
+```
+
+### Logging
+
+```go
+logger.Info("processing task",
+    "id", task.ID,
+    "status", task.Status,
+)
+```
+
+## Task Files (h3cloud/, etc.)
+
+When working with task `.md` files and `_index.json`:
+
+### ❌ NEVER edit `_index.json` manually
+
+`_index.json` is managed exclusively by `storage` package code. Manual edits will be overwritten by the next `pull` or `SaveTask` call.
+
+**To move a task between module files:**
+- Move the task block between `.md` files — that is sufficient.
+- The module is resolved from the filename (`todo-backup.md` → module `backup`).
+- `_index.json` does NOT need to be updated — it will sync on next `SaveTask`.
+
+**Module resolution priority (code):**
+1. `_index.json` entry `module` field — if present, takes priority
+2. Filename suffix — `todo-backup.md` → module `backup`, used when index has no module
+
+### Task file structure
+
+```
+{directory}/
+├── _index.json              # DO NOT edit manually
+├── all/                     # unassigned tasks
+│   ├── todo.md
+│   ├── todo-{module}.md     # tasks in module
+│   └── in_progress.md
+└── {email}/                 # assigned tasks
+    └── todo.md
+```
+
+## Checklist Before Completion
+
+- [ ] File structure is correct and clear
+- [ ] Code readable without comments
+- [ ] All files < 500 lines
+- [ ] No hardcoded values
+- [ ] Linting passes
+- [ ] Tests written if applicable
+- [ ] Commit in English
