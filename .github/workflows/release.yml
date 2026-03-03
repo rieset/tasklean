@@ -79,10 +79,40 @@ jobs:
             cp "$dir"/* release/ 2>/dev/null || true
           done
 
-      - name: Create Release
+      - name: Create Release with version
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
           generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  latest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            cp "$dir"/* release/ 2>/dev/null || true
+          done
+
+      - name: Create Latest Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          release_name: Latest Release
+          files: release/*
+          body: "Latest stable release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
