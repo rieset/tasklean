@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	indexFilename    = "_index.json"
-	unassignedDir    = "all"
-	idMarkerPrefix   = "[id:"
-	idMarkerSuffix   = "]"
+	indexFilename      = "_index.json"
+	unassignedDir      = "all"
+	idMarkerPrefix     = "[id:"
+	idMarkerSuffix     = "]"
 	taskSeparator      = "\n\n\n---\n" // written format: two blank lines before ---
 	taskSeparatorParse = "\n---\n"     // parser splits on this, matches both old and new format
-	statusLegend     = "📥 backlog | 📋 todo | 🚀 in progress | 👀 in review | ✅ done | ❌ cancelled"
-	statusLegendDesc = "*Обозначения статусов для изменения статуса задачи при push*"
+	statusLegend       = "📥 backlog | 📋 todo | 🚀 in progress | 👀 in review | ✅ done | ❌ cancelled"
+	statusLegendDesc   = "*Обозначения статусов для изменения статуса задачи при push*"
 )
 
 // Matches [emoji id:uuid] or [id:uuid]. Group 1: optional emoji, Group 2: id.
@@ -558,7 +558,7 @@ func DeleteTask(taskID, directory string) error {
 	idx, _ := loadIndex(directory)
 	if idx != nil {
 		delete(idx, taskID)
-		saveIndex(directory, idx)
+		_ = saveIndex(directory, idx)
 	}
 	return nil
 }

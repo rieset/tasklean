@@ -23,7 +23,7 @@ var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4
 // PlaneTracker fetches tasks from a Plane instance (self-hosted or cloud).
 type PlaneTracker struct {
 	client       *http.Client
-	statesCache  map[string][]stateInfo    // projectID → states
+	statesCache  map[string][]stateInfo       // projectID → states
 	modulesCache map[string]map[string]string // projectID → moduleID→name
 }
 
@@ -635,7 +635,7 @@ type issue struct {
 	ModuleDetails       []moduleInfo   `json:"module_details"`
 	ModuleIDs           []string       `json:"module_ids"` // self-hosted: array of module UUIDs
 	AssigneeDetails     []assigneeInfo `json:"assignee_details"`
-	Assignees           []assigneeInfo `json:"assignees"`   // expanded objects
+	Assignees           []assigneeInfo `json:"assignees"`    // expanded objects
 	AssigneeIDs         []string       `json:"assignee_ids"` // self-hosted: array of UUIDs
 	CreatedAt           string         `json:"created_at"`
 	UpdatedAt           string         `json:"updated_at"`

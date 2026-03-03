@@ -27,7 +27,7 @@ func NewRootCommand(cfg *config.Config, tr tracker.Tracker) *RootCommand {
 		Long: `Tasklean - CLI tool for managing tasks from task trackers as local files.
 Built with Bubble Tea for interactive TUI experience.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			_ = cmd.Help()
 		},
 	}
 

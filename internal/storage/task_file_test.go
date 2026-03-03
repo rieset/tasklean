@@ -70,7 +70,7 @@ func TestListTasks(t *testing.T) {
 		t.Errorf("Expected 3 tasks, got %d", len(loaded))
 	}
 
-	os.WriteFile(filepath.Join(dir, "README.md"), []byte("# Readme"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "README.md"), []byte("# Readme"), 0644)
 
 	loaded, err = ListTasks(dir)
 	if err != nil {
