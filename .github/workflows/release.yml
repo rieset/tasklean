@@ -91,12 +91,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout packages branch
+      - uses: actions/checkout@v4
+        with:
+          ref: packages
+          fetch-depth: 0
+
+      - name: Configure git
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git fetch origin packages || git checkout --orphan packages
-          git reset --hard origin/packages || true
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
