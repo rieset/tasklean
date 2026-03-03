@@ -16,15 +16,13 @@ Tasklean синхронизирует задачи между трекером (
 
 ## Установка
 
-Замени `v0.0.1` на нужную версию:
-
 | Платформа | Ссылка |
 |-----------|--------|
-| Linux amd64 | [tasklean_linux_amd64.tar.gz](https://github.com/rieset/tasklean/releases/download/v0.0.1/tasklean_linux_amd64.tar.gz) |
-| Linux arm64 | [tasklean_linux_arm64.tar.gz](https://github.com/rieset/tasklean/releases/download/v0.0.1/tasklean_linux_arm64.tar.gz) |
-| macOS amd64 | [tasklean_darwin_amd64.tar.gz](https://github.com/rieset/tasklean/releases/download/v0.0.1/tasklean_darwin_amd64.tar.gz) |
-| macOS arm64 (Apple Silicon) | [tasklean_darwin_arm64.tar.gz](https://github.com/rieset/tasklean/releases/download/v0.0.1/tasklean_darwin_arm64.tar.gz) |
-| Windows amd64 | [tasklean_windows_amd64.zip](https://github.com/rieset/tasklean/releases/download/v0.0.1/tasklean_windows_amd64.zip) |
+| Linux amd64 | [tasklean_linux_amd64.tar.gz](https://github.com/rieset/tasklean/releases/latest/download/tasklean_linux_amd64.tar.gz) |
+| Linux arm64 | [tasklean_linux_arm64.tar.gz](https://github.com/rieset/tasklean/releases/latest/download/tasklean_linux_arm64.tar.gz) |
+| macOS amd64 | [tasklean_darwin_amd64.tar.gz](https://github.com/rieset/tasklean/releases/latest/download/tasklean_darwin_amd64.tar.gz) |
+| macOS arm64 (Apple Silicon) | [tasklean_darwin_arm64.tar.gz](https://github.com/rieset/tasklean/releases/latest/download/tasklean_darwin_arm64.tar.gz) |
+| Windows amd64 | [tasklean_windows_amd64.zip](https://github.com/rieset/tasklean/releases/latest/download/tasklean_windows_amd64.zip) |
 
 ```bash
 # Распаковать и положить в PATH (пример для Linux)
