@@ -90,17 +90,9 @@ jobs:
   save-packages:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: packages
-          fetch-depth: 0
-
-      - name: Configure git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -108,15 +100,18 @@ jobs:
 
       - name: Prepare packages
         run: |
-          rm -rf packages
-          mkdir -p packages
+          mkdir -p release
           for dir in artifacts/*/; do
-            cp "$dir"/* packages/ 2>/dev/null || true
+            cp "$dir"/* release/ 2>/dev/null || true
           done
-          ls -la packages/
+          ls -la release/
 
-      - name: Commit and push
-        run: |
-          git add -A
-          git commit -m "Release: update packages" || echo "No changes to commit"
-          git push origin packages --force
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          release_name: Latest Release
+          files: release/*
+          body: "Latest stable build"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
