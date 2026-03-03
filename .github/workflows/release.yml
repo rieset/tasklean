@@ -98,32 +98,3 @@ jobs:
           git add README.md
           git commit -m "docs: update download links to $TAG_NAME"
           git push
-
-  save-packages:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Prepare packages
-        run: |
-          mkdir -p release
-          for dir in artifacts/*/; do
-            cp "$dir"/* release/ 2>/dev/null || true
-          done
-          ls -la release/
-
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          release_name: Latest Release
-          files: release/*
-          body: "Latest stable build"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
