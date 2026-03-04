@@ -146,6 +146,41 @@ When working with task `.md` files and `_index.json`:
     └── todo.md
 ```
 
+## Task Creation Guidelines
+
+When creating tasks, ALWAYS follow these rules:
+
+### 1. Reformulate the Task
+
+Original user input is often vague. ALWAYS reformulate to be:
+- **Specific** — clear scope and deliverable
+- **Actionable** — what exactly needs to be done
+- **Measurable** — how to know when it's done
+
+### 2. Add Description
+
+Every task MUST have a description that explains:
+- **What** — exact scope of work
+- **Why** — business value or reason
+- **Context** — relevant background information
+
+### 3. Add Checklist (How to Achieve Result)
+
+Every task MUST have a checklist with concrete steps:
+- Break down into actionable items
+- Each item should be completable in one session
+- Order matters — dependencies first
+
+**Example:**
+❌ Bad: "Fix login bug"
+✅ Good:
+- Description: Users cannot login with Google OAuth due to expired token refresh
+- Checklist:
+  - [ ] Check Google OAuth token expiration logic
+  - [ ] Implement token refresh in auth service
+  - [ ] Add unit tests for token refresh
+  - [ ] Test login flow end-to-end
+
 ## Checklist Before Completion
 
 - [ ] File structure is correct and clear

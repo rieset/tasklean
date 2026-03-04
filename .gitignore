@@ -4,3 +4,5 @@ tasklean.exe
 *.exe
 /cmd/tasklean/
 !cmd/tasklean/main.go
+.cursorrules
+~/

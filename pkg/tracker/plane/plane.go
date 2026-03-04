@@ -93,7 +93,7 @@ func (p *PlaneTracker) FetchTasks(ctx context.Context, cfg *config.RemoteConfig,
 		q := reqURL.Query()
 		q.Set("limit", fmt.Sprintf("%d", limit))
 		q.Set("offset", fmt.Sprintf("%d", offset))
-		q.Set("expand", "module,module_details,assignees")
+		q.Set("expand", "module,module_details,assignees,state")
 		if assigneeID != "" {
 			q.Set("assignees", assigneeID)
 		}
@@ -159,6 +159,13 @@ func (p *PlaneTracker) FetchTasks(ctx context.Context, cfg *config.RemoteConfig,
 
 	memberEmails, _ := p.fetchProjectMemberEmails(ctx, apiBase, cfg, authHeader, projectID)
 
+	stateIDToGroup := p.buildStateIDToGroup(ctx, apiBase, cfg, authHeader, projectID, debug)
+	if debug && len(allIssues) > 0 && stateIDToGroup != nil {
+		sid := allIssues[0].State.ID
+		g := stateIDToGroup[sid]
+		fmt.Fprintf(os.Stderr, "[debug] first issue state_id=%q => group=%q\n", sid, g)
+	}
+
 	var issueToModule map[string]string
 	if !skipModules {
 		issueToModule, _ = p.fetchIssueToModuleMap(ctx, apiBase, cfg, authHeader, projectID, debug)
@@ -166,7 +173,7 @@ func (p *PlaneTracker) FetchTasks(ctx context.Context, cfg *config.RemoteConfig,
 
 	tasks := make([]*models.Task, 0, len(allIssues))
 	for _, i := range allIssues {
-		tasks = append(tasks, issueToTask(i, memberEmails, issueToModule))
+		tasks = append(tasks, issueToTask(i, memberEmails, issueToModule, stateIDToGroup))
 	}
 	return tasks, nil
 }
@@ -533,7 +540,7 @@ func parseIssuesResponse(body []byte) ([]issue, error) {
 	return direct, nil
 }
 
-func issueToTask(i issue, memberEmails map[string]string, issueToModule map[string]string) *models.Task {
+func issueToTask(i issue, memberEmails map[string]string, issueToModule map[string]string, stateIDToGroup map[string]string) *models.Task {
 	createdAt, _ := time.Parse(time.RFC3339, i.CreatedAt)
 	updatedAt, _ := time.Parse(time.RFC3339, i.UpdatedAt)
 
@@ -552,11 +559,19 @@ func issueToTask(i issue, memberEmails map[string]string, issueToModule map[stri
 		moduleName = issueToModule[i.ID]
 	}
 	assignees := extractAssignees(i, memberEmails)
+
+	stateGroup := i.StateGroup
+	if stateGroup == "" && i.State.Group != "" {
+		stateGroup = i.State.Group
+	}
+	if stateGroup == "" && stateIDToGroup != nil && i.State.ID != "" {
+		stateGroup = stateIDToGroup[i.State.ID]
+	}
 	return &models.Task{
 		ID:          i.ID,
 		Title:       i.Name,
 		Description: desc,
-		Status:      mapStateGroupToStatus(i.StateGroup),
+		Status:      mapStateGroupToStatus(stateGroup),
 		Module:      moduleName,
 		Assignees:   assignees,
 		CreatedAt:   createdAt,
@@ -629,7 +644,7 @@ type issue struct {
 	Name                string         `json:"name"`
 	DescriptionHTML     string         `json:"description_html"`
 	DescriptionStripped string         `json:"description_stripped"`
-	State               string         `json:"state"`
+	State               flexState      `json:"state"` // UUID string or {id, group} when expanded
 	StateGroup          string         `json:"state__group"`
 	Module              *flexModule    `json:"module"` // can be UUID string or {id,name} object
 	ModuleDetails       []moduleInfo   `json:"module_details"`
@@ -639,6 +654,36 @@ type issue struct {
 	AssigneeIDs         []string       `json:"assignee_ids"` // self-hosted: array of UUIDs
 	CreatedAt           string         `json:"created_at"`
 	UpdatedAt           string         `json:"updated_at"`
+}
+
+// flexState unmarshals from either "uuid-string" or {"id":"...","group":"..."} when state is expanded.
+type flexState struct {
+	ID    string
+	Group string
+}
+
+func (f *flexState) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+		f.ID = s
+		return nil
+	}
+	var obj struct {
+		ID    string `json:"id"`
+		Group string `json:"group"`
+	}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+	f.ID = obj.ID
+	f.Group = obj.Group
+	return nil
 }
 
 // flexModule unmarshals from either "uuid-string" or {"id":"...","name":"..."}.
@@ -689,8 +734,9 @@ type issuesResponse struct {
 }
 
 type stateInfo struct {
-	ID    string `json:"id"`
-	Group string `json:"group"`
+	ID         string `json:"id"`
+	Group      string `json:"group"`
+	StateGroup string `json:"state_group"` // some API variants use snake_case
 }
 
 // UpdateTask updates an existing issue in Plane.
@@ -809,7 +855,11 @@ func (p *PlaneTracker) CreateTask(ctx context.Context, cfg *config.RemoteConfig,
 		desc = transform.TransformDescription(created.DescriptionHTML)
 	}
 
-	status := mapStateGroupToStatus(created.StateGroup)
+	stateGroup := created.StateGroup
+	if stateGroup == "" && created.State.Group != "" {
+		stateGroup = created.State.Group
+	}
+	status := mapStateGroupToStatus(stateGroup)
 	if status == "" {
 		status = task.Status
 	}
@@ -947,6 +997,29 @@ func (p *PlaneTracker) planeRequestSetup(ctx context.Context, cfg *config.Remote
 		}
 	}
 	return apiBase, endpoint, authHeader, projectID, nil
+}
+
+// buildStateIDToGroup returns map of state UUID -> group for resolving status when API omits state__group (self-hosted).
+func (p *PlaneTracker) buildStateIDToGroup(ctx context.Context, apiBase string, cfg *config.RemoteConfig, authHeader, projectID string, debug bool) map[string]string {
+	states, err := p.fetchProjectStates(ctx, apiBase, cfg, authHeader, projectID)
+	if err != nil {
+		if debug {
+			fmt.Fprintf(os.Stderr, "[debug] fetch states failed: %v\n", err)
+		}
+		return nil
+	}
+	m := make(map[string]string, len(states))
+	for _, s := range states {
+		g := s.Group
+		if g == "" {
+			g = s.StateGroup
+		}
+		m[s.ID] = g
+	}
+	if debug {
+		fmt.Fprintf(os.Stderr, "[debug] states: %d mapped (id->group)\n", len(m))
+	}
+	return m
 }
 
 func (p *PlaneTracker) fetchProjectStates(ctx context.Context, apiBase string, cfg *config.RemoteConfig, authHeader, projectID string) ([]stateInfo, error) {
